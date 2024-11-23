@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 wav_fname = '16bit2chan.wav'
 samplerate, data = wavfile.read(wav_fname)
+# changes the value for "samplerate". Simply there for testing
+samplerate -= 40000
+
 print(f"number of channels = {data.shape[len(data.shape) - 1]}")
 print(f'this is data shape {data.shape}')
 print(f"sample rate = {samplerate}Hz")
@@ -13,6 +16,9 @@ print(f"length = {length}s")
 
 wav_fname = '16bit2chan.wav'
 samplerate, data = wavfile.read(wav_fname)
+# changes the value for "samplerate". Simply there for testing
+samplerate -= 40000
+
 print(f"number of channels = {data.shape[len(data.shape) - 1]}")
 print(f'this is data shape {data.shape}')
 print(f"sample rate = {samplerate}Hz")
