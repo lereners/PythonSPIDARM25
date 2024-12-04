@@ -30,7 +30,7 @@ def find_nearest_value(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-def plot():
+def plot_wave():
     wav_fname = '16bit2chan.wav'
     samplerate, data = wavfile.read(wav_fname)
     print(f"number of channels = {data.shape[len(data.shape) - 1]}")
@@ -42,20 +42,23 @@ def plot():
     time = np.linspace(0., length, data.shape[0])
 
     # using matplotlib figures
-    fig = Figure(figsize=(6,3), dpi=100)
+    fig = Figure(figsize=(7, 5), dpi=100)
     plt = fig.add_subplot(111)
 
     # plot formatting
     plt.plot(time, data[:, 0], label="Left channel")
     plt.set_xlabel("Time [s]")
     plt.set_ylabel("Amplitude")
+    # change this to file name + plot type?
+    # ex: scream.wav Waveform
+    # ex: shout.wav RT60 Combines
     plt.set_title("Audio File Plotted")
     plt.legend()
 
     # displaying the plot
-    plot = FigureCanvasTkAgg(fig, master=_base)
+    plot = FigureCanvasTkAgg(fig, master=_plot_frame)
     plot_display = plot.get_tk_widget()
-    plot_display.grid(row=3, column=1, sticky=(N, E, S, W))
+    plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
     plot.draw()
 
 # taken from colab, added target argument to choose the target frequency (possibly to plot the low, mid, high)
@@ -86,9 +89,10 @@ def plot_rt60(target):
     data_in_db = 10 * np.log10(np.abs(filtered_data) + 1e-10)  # Avoid log of zero
 
     # Plot the filtered signal in decibel scale
-    fig_rt60 = Figure(figsize=(6, 3), dpi=100)
+    fig_rt60 = Figure(figsize=(7, 5), dpi=100)
     plt = fig_rt60.add_subplot(111)
 
+    plt.set_title("Audio File Plotted")
     plt.set_xlabel("Time [s]")
     plt.set_ylabel("Power (dB)")
 
@@ -122,7 +126,7 @@ def plot_rt60(target):
     print(f'The RT60 reverb time at freq {int(target_frequency)}Hz is {round(abs(rt60), 2)} seconds')
 
     # displaying the plot
-    plot = FigureCanvasTkAgg(fig_rt60, master=_base)
+    plot = FigureCanvasTkAgg(fig_rt60, master=_plot_frame)
     plot_display = plot.get_tk_widget()
     plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
     plot.draw()
@@ -130,15 +134,42 @@ def plot_rt60(target):
 # maybe to choose low, mid, high rt60 frequencies?
 # not sure if this would actually work, just using dummy numbers (2000, 5000)
 def plot_as_chosen():
+    # these 4 have placeholder values, just to test the text appearance
+    # likely have these as class properties
+    file_name = "FILE NAME!!"
+    audio_length = 34
+    res_freq = 24
+    rt60_diff = 0.7
+
     plot_choice = plot_var.get()
+
+    # combine all plotting funcs into a class method?!
     if plot_choice == "Waveform":
-        plot()
+        plot_wave()
     elif plot_choice == "Low RT60":
         plot_rt60(1000)
     elif plot_choice == "Med RT60":
         plot_rt60(2000)
     elif plot_choice == "High RT60":
         plot_rt60(5000)
+    elif plot_choice == "Spectrogram":
+        plot_spec()
+
+    # height=2 means that text displays 4 lines of text
+    audio_info = Text (_plot_frame, height=4)
+    # row=3 is below the plot (row=2)
+    audio_info.grid(row=3, column=1, sticky=(E, W))
+    # displaying the required information
+    # maybe omit file name if we display it in the plot title?
+    # chose the "property: value" format because the FAQ ppt slide 5 uses that format for the RT60 difference
+    audio_info.insert(INSERT, f"File name: {file_name}\n")
+    audio_info.insert(INSERT, f"Length: {audio_length}s.\n")
+    audio_info.insert(INSERT, f"Resonant frequency: {res_freq} Hz.\n")
+    audio_info.insert(INSERT, f"RT60 difference: {rt60_diff} ")
+
+# just a placeholder for plot_as_chosen ....
+def plot_spec():
+    return "this is not implemented ! hahaha"
 
 if __name__ == "__main__":
     _root = Tk()
@@ -154,29 +185,29 @@ if __name__ == "__main__":
 
     # button to load + plot audio
     # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
-    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=plot)
-    _load_btn.grid(row=1, column=1, sticky=E)
+    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=plot_wave)
+    _load_btn.grid(row=1, column=1, sticky=W)
 
     # frame to hold the plots
     _plot_frame = ttk.LabelFrame(_base, text="Plots")
-    _plot_frame.grid(row=2, column=1, sticky=(E, W))
+    _plot_frame.grid(row=3, column=1, sticky=(E, W))
 
     # combobox to choose which plot to display
-    plot_var = tk.StringVar(value='Choose a Plot Display')  # holds choice
+    plot_var = tk.StringVar(value='Choose a Plot')  # holds choice
     plot_label = tk.Label(_plot_frame, text='Plot Display Choice')
-    plot_choices = ("Waveform", "Low RT60", "Med RT60", "High RT60", "Creative Choice")
-    plot_choice_input = ttk.Combobox(_plot_frame, values=plot_choices, textvariable=plot_var, state='readonly')
-    plot_choice_input.grid(row=1, column=2, sticky=E)
+    plot_choices = ("Waveform", "Low RT60", "Med RT60", "High RT60", "Spectrogram", "Creative Choice")
+    plot_choice_input = ttk.Combobox(_button_frame, values=plot_choices, textvariable=plot_var, state='readonly')
+    plot_choice_input.grid(row=2, column=1, sticky=E)
 
     # depending on the plot chosen in the combobox, plot_as_chosen will plot the specific plot
     # currently, it is set up that we have one window that displays plots, and the window will change its display depending on the combobox choice
     # maybe choose to have all the plots at once? the display selector seems cool, though...
-    load_btn_2 = ttk.Button(_button_frame, text="Choose and Display", command=plot_as_chosen)
-    load_btn_2.grid(row=1, column=5, sticky=E)
+    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=plot_as_chosen)
+    load_btn_2.grid(row=2, column=2, sticky=W)
 
     # button to combine rt60 plots, not implemented at all! just placeholder
     rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies")
-    rt60_combo_btn.grid(row=1, column=3, sticky=E)
+    rt60_combo_btn.grid(row=1, column=2, sticky=W)
 
 
     _root.mainloop()
