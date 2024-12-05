@@ -141,7 +141,7 @@ def plot_all_rt60():
     sample_rate, data = wavfile.read("16bit1chan.wav")
 
     # Target frequencies to analyze
-    targets = [1000, 2000, 5000]
+    targets = [250, 2000, 8000]
 
     # Create a single figure for all RT60 plots
     fig_rt60 = Figure(figsize=(7, 5), dpi=100)
@@ -225,11 +225,11 @@ def plot_as_chosen():
     if plot_choice == "Waveform":
         plot_wave()
     elif plot_choice == "Low RT60":
-        plot_rt60(1000)
+        plot_rt60(250)
     elif plot_choice == "Med RT60":
         plot_rt60(2000)
     elif plot_choice == "High RT60":
-        plot_rt60(5000)
+        plot_rt60(8000)
     elif plot_choice == "Spectrogram":
         plot_spec()
 
