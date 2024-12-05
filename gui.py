@@ -10,6 +10,9 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+from audio_handling import *
+
+currentFile = '' # holds the most recent file selected
 
 # Band-pass filter function
 def bandpass_filter(data, lowcut, highcut, fs, order=4):
@@ -17,7 +20,7 @@ def bandpass_filter(data, lowcut, highcut, fs, order=4):
     low = lowcut / nyquist
     high = highcut / nyquist
     b, a = butter(order, [low, high], btype='band')
-    return filtfilt(b, a, data)
+    return filtfilt(b, a, data, -1, None)
 
 # Find the target frequency closest to target Hz
 def find_target_frequency(freqs, target):
@@ -30,9 +33,13 @@ def find_nearest_value(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
+def find_and_plot():
+    global currentFile
+    currentFile = findFile()
+    plot_wave()
+
 def plot_wave():
-    wav_fname = '16bit2chan.wav'
-    samplerate, data = wavfile.read(wav_fname)
+    samplerate, data = wavfile.read(currentFile)
     print(f"number of channels = {data.shape[len(data.shape) - 1]}")
     print(f'this is data shape {data.shape}')
     print(f"sample rate = {samplerate}Hz")
@@ -65,7 +72,7 @@ def plot_wave():
 # have not modified a lot of this code, just the stuff to use the matplotlib figure
 def plot_rt60(target):
     # Load the audio file
-    sample_rate, data = wavfile.read("16bit1chan.wav")
+    sample_rate, data = wavfile.read("16bit2chan.wav")
 
     # Define the time vector
     t = np.linspace(0, len(data) / sample_rate, len(data), endpoint=False)
@@ -134,6 +141,9 @@ def plot_rt60(target):
 # maybe to choose low, mid, high rt60 frequencies?
 # not sure if this would actually work, just using dummy numbers (2000, 5000)
 def plot_as_chosen():
+    global currentFile
+    if (currentFile == ''):
+        currentFile = findFile()
     # these 4 have placeholder values, just to test the text appearance
     # likely have these as class properties
     file_name = "FILE NAME!!"
@@ -185,7 +195,7 @@ if __name__ == "__main__":
 
     # button to load + plot audio
     # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
-    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=plot_wave)
+    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=find_and_plot)
     _load_btn.grid(row=1, column=1, sticky=W)
 
     # frame to hold the plots
@@ -193,7 +203,7 @@ if __name__ == "__main__":
     _plot_frame.grid(row=3, column=1, sticky=(E, W))
 
     # combobox to choose which plot to display
-    plot_var = tk.StringVar(value='Choose a Plot')  # holds choice
+    plot_var = tk.StringVar(_root, 'Choose a Plot')  # holds choice
     plot_label = tk.Label(_plot_frame, text='Plot Display Choice')
     plot_choices = ("Waveform", "Low RT60", "Med RT60", "High RT60", "Spectrogram", "Creative Choice")
     plot_choice_input = ttk.Combobox(_button_frame, values=plot_choices, textvariable=plot_var, state='readonly')
