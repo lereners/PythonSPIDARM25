@@ -5,6 +5,7 @@ import numpy as np
 # using Figure to place the plot in the GUI
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import gui
 
 # Find the target frequency closest to target Hz
 def find_target_frequency(freqs, target):
@@ -65,12 +66,12 @@ class BaseAudio():
             # not sure if this would actually work, just using dummy numbers (2000, 5000)
 
     # plot_choice from combobox - new argument
-    def plot_as_chosen(self, data, sample_rate, plot_choice):
+    def plot_as_chosen(self, plot_choice):
         # these 4 have placeholder values, just to test the text appearance
         # likely have these as class properties
         file_name = "FILE NAME!!"
         audio_length = 34
-        frequencies, power = welch(data, sample_rate, nperseg=4096)
+        frequencies, power = welch(self.data, self.sample_rate, nperseg=4096)
         dominant_frequency = frequencies[np.argmax(power)]
         print(f'dominant_frequency is {round(dominant_frequency)}Hz')
         res_freq = dominant_frequency
@@ -78,15 +79,15 @@ class BaseAudio():
 
         # combine all plotting funcs into a class method?!
         if plot_choice == "Waveform":
-            BaseAudio.plot_wave()
+            self.plot_wave()
         elif plot_choice == "Low RT60":
-            PlotRT60.plot_rt60(1000)
+            self.plot_rt60(1000)
         elif plot_choice == "Med RT60":
-            PlotRT60.plot_rt60(2000)
+            self.plot_rt60(2000)
         elif plot_choice == "High RT60":
-            PlotRT60.plot_rt60(5000)
+            self.plot_rt60(5000)
         elif plot_choice == "Spectrogram":
-            PlotRT60.plot_spec()
+            self.plot_spec()
 
         # height=2 means that text displays 4 lines of text
         audio_info = Text(gui._plot_frame, height=4)
@@ -99,13 +100,6 @@ class BaseAudio():
         audio_info.insert(INSERT, f"Length: {audio_length}s.\n")
         audio_info.insert(INSERT, f"Resonant frequency: {res_freq} Hz.\n")
         audio_info.insert(INSERT, f"RT60 difference: {rt60_diff} ")
-
-
-class PlotRT60(BaseAudio):
-    def __init__(self, wav_fname, data, sample_rate):
-        self.wav_fname = wav_fname
-        self.sample_rate = sample_rate
-        self.data = data
 
     def plot_rt60(self, data, sample_rate, target):
             # Define the time vector
