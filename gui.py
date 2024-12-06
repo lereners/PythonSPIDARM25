@@ -1,3 +1,4 @@
+
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
@@ -11,8 +12,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from audio_handling import *
+from pathlib import Path
 
-currentFile = '' # holds the most recent file selected
+currentFile = ''
 
 # Band-pass filter function
 def bandpass_filter(data, lowcut, highcut, fs, order=4):
@@ -20,7 +22,7 @@ def bandpass_filter(data, lowcut, highcut, fs, order=4):
     low = lowcut / nyquist
     high = highcut / nyquist
     b, a = butter(order, [low, high], btype='band')
-    return filtfilt(b, a, data, -1, None)
+    return filtfilt(b, a, data)
 
 # Find the target frequency closest to target Hz
 def find_target_frequency(freqs, target):
@@ -39,7 +41,14 @@ def find_and_plot():
     plot_wave()
 
 def plot_wave():
-    samplerate, data = wavfile.read(currentFile)
+    # =====================================================
+    # global currentFile
+    # if (currentFile == ''):
+    #     currentFile = findFile()
+    # samplerate, data = wavfile.read(currentFile)
+    # =====================================================
+    samplerate, data = wavfile.read("16bit2chan.wav")
+
     print(f"number of channels = {data.shape[len(data.shape) - 1]}")
     print(f'this is data shape {data.shape}')
     print(f"sample rate = {samplerate}Hz")
@@ -71,11 +80,20 @@ def plot_wave():
 # taken from colab, added target argument to choose the target frequency (possibly to plot the low, mid, high)
 # have not modified a lot of this code, just the stuff to use the matplotlib figure
 def plot_rt60(target):
+    # =====================================================
+    # global currentFile
+    # if (currentFile == ''):
+    #     currentFile = findFile()
+    
+    # sample_rate, data = wavfile.read(currentFile)
+    # =====================================================
     # Load the audio file
-    sample_rate, data = wavfile.read("16bit2chan.wav")
+    sample_rate, data = wavfile.read("16bit1chan.wav")
 
     # Define the time vector
     t = np.linspace(0, len(data) / sample_rate, len(data), endpoint=False)
+    # length = data.shape[0] / sample_rate
+    # t = np.linspace(0., length, data.shape[0])
 
     # Calculate the Fourier Transform of the signal
     fft_result = np.fft.fft(data)
@@ -137,13 +155,88 @@ def plot_rt60(target):
     plot_display = plot.get_tk_widget()
     plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
     plot.draw()
+def plot_all_rt60():
+    # Placeholder values for testing
+    file_name = "FILE NAME!!"
+    audio_length = 34
+    res_freq = 24
+    rt60_diff = 0.7
+
+    # Load the audio file
+    sample_rate, data = wavfile.read("16bit1chan.wav")
+
+    # Target frequencies to analyze
+    targets = [250, 2000, 8000]
+
+    # Create a single figure for all RT60 plots
+    fig_rt60 = Figure(figsize=(7, 5), dpi=100)
+    plt = fig_rt60.add_subplot(111)
+
+    # Define the time vector
+    t = np.linspace(0, len(data) / sample_rate, len(data), endpoint=False)
+
+    for target in targets:
+        # Calculate the Fourier Transform of the signal
+        fft_result = np.fft.fft(data)
+        spectrum = np.abs(fft_result)  # Get magnitude spectrum
+        freqs = np.fft.fftfreq(len(data), d=1 / sample_rate)
+
+        # Use only positive frequencies
+        freqs = freqs[:len(freqs) // 2]
+        spectrum = spectrum[:len(spectrum) // 2]
+
+        # Find the target frequency
+        target_frequency = find_target_frequency(freqs, target)
+
+        # Apply a band-pass filter around the target frequency
+        filtered_data = bandpass_filter(data, target_frequency - 50, target_frequency + 50, sample_rate)
+
+        # Convert the filtered audio signal to decibel scale
+        data_in_db = 10 * np.log10(np.abs(filtered_data) + 1e-10)  # Avoid log of zero
+
+        # Plot the filtered signal in decibel scale
+        plt.plot(t, data_in_db, label=f"{target} Hz", linewidth=1, alpha=0.7)
+
+        # Find the index of the maximum value
+        index_of_max = np.argmax(data_in_db)
+        value_of_max = data_in_db[index_of_max]
+
+        # Slice the array from the maximum value
+        sliced_array = data_in_db[index_of_max:]
+        value_of_max_less_5 = value_of_max - 5
+
+        # Find the nearest value for max-5dB and its index
+        value_of_max_less_5 = find_nearest_value(sliced_array, value_of_max_less_5)
+        index_of_max_less_5 = np.where(data_in_db == value_of_max_less_5)[0][0]
+
+        # Find the nearest value for max-25dB and its index
+        value_of_max_less_25 = value_of_max - 25
+        value_of_max_less_25 = find_nearest_value(sliced_array, value_of_max_less_25)
+        index_of_max_less_25 = np.where(data_in_db == value_of_max_less_25)[0][0]
+
+        # Calculate RT60 time
+        rt20 = t[index_of_max_less_5] - t[index_of_max_less_25]
+        rt60 = 3 * rt20
+
+        # Print RT60 value
+        print(f'The RT60 reverb time at freq {int(target_frequency)}Hz is {round(abs(rt60), 2)} seconds')
+
+    # Finalize the plot
+    plt.set_title("RT60 Analysis for Different Frequencies")
+    plt.set_xlabel("Time [s]")
+    plt.set_ylabel("Power (dB)")
+    plt.legend()
+    plt.grid(True)
+
+    # Displaying the plot
+    plot = FigureCanvasTkAgg(fig_rt60, master=_plot_frame)
+    plot_display = plot.get_tk_widget()
+    plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
+    plot.draw()
 
 # maybe to choose low, mid, high rt60 frequencies?
 # not sure if this would actually work, just using dummy numbers (2000, 5000)
 def plot_as_chosen():
-    global currentFile
-    if (currentFile == ''):
-        currentFile = findFile()
     # these 4 have placeholder values, just to test the text appearance
     # likely have these as class properties
     file_name = "FILE NAME!!"
@@ -157,11 +250,11 @@ def plot_as_chosen():
     if plot_choice == "Waveform":
         plot_wave()
     elif plot_choice == "Low RT60":
-        plot_rt60(1000)
+        plot_rt60(250)
     elif plot_choice == "Med RT60":
         plot_rt60(2000)
     elif plot_choice == "High RT60":
-        plot_rt60(5000)
+        plot_rt60(8000)
     elif plot_choice == "Spectrogram":
         plot_spec()
 
@@ -195,6 +288,7 @@ if __name__ == "__main__":
 
     # button to load + plot audio
     # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
+    # _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=plot_wave)
     _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=find_and_plot)
     _load_btn.grid(row=1, column=1, sticky=W)
 
@@ -203,7 +297,7 @@ if __name__ == "__main__":
     _plot_frame.grid(row=3, column=1, sticky=(E, W))
 
     # combobox to choose which plot to display
-    plot_var = tk.StringVar(_root, 'Choose a Plot')  # holds choice
+    plot_var = tk.StringVar(value='Choose a Plot')  # holds choice
     plot_label = tk.Label(_plot_frame, text='Plot Display Choice')
     plot_choices = ("Waveform", "Low RT60", "Med RT60", "High RT60", "Spectrogram", "Creative Choice")
     plot_choice_input = ttk.Combobox(_button_frame, values=plot_choices, textvariable=plot_var, state='readonly')
@@ -215,8 +309,8 @@ if __name__ == "__main__":
     load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=plot_as_chosen)
     load_btn_2.grid(row=2, column=2, sticky=W)
 
-    # button to combine rt60 plots, not implemented at all! just placeholder
-    rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies")
+    # button to combine rt60 plots
+    rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies", command=plot_all_rt60)
     rt60_combo_btn.grid(row=1, column=2, sticky=W)
 
 
