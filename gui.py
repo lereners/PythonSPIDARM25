@@ -42,12 +42,12 @@ def find_and_plot():
 
 def plot_wave():
     # =====================================================
-    # global currentFile
-    # if (currentFile == ''):
-    #     currentFile = findFile()
-    # samplerate, data = wavfile.read(currentFile)
+    global currentFile
+    if (currentFile == ''):
+        currentFile = findFile()
+    samplerate, data = wavfile.read(currentFile)
     # =====================================================
-    samplerate, data = wavfile.read("16bit2chan.wav")
+    # samplerate, data = wavfile.read("16bit2chan.wav")
 
     print(f"number of channels = {data.shape[len(data.shape) - 1]}")
     print(f'this is data shape {data.shape}')
