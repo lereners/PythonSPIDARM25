@@ -188,6 +188,7 @@ def plot_spec():
     else:
         # Mono audio, no change needed
         data = data
+    #Spectrum calculations
     spectrum, freqs, t, im = plt.specgram(data, Fs=sample_rate, \
     NFFT=1024, cmap=plt.get_cmap('autumn_r'))
     cbar = plt.colorbar(im)
