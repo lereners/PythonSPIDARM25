@@ -62,7 +62,12 @@ def plot_wave():
     plt = fig.add_subplot(111)
 
     # plot formatting
-    plt.plot(time, data[:, 0], label="Left channel")
+    # plt.plot(time, data[:, 0], label="Left channel")
+    # print(len(data.shape) - 1)
+    if (len(data.shape) == 1):
+        plt.plot(time, data[:], label="Left channel")
+    else:
+        plt.plot(time, data[:, 0], label="Left channel")
     plt.set_xlabel("Time [s]")
     plt.set_ylabel("Amplitude")
     # change this to file name + plot type?
