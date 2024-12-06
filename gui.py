@@ -4,12 +4,25 @@ from tkinter import *
 from tkinter import ttk
 import tkinter as tk
 # using Figure to place the plot in the GUI
-import PlotClass
+from PlotClass import *
 
 
 # just a placeholder for plot_as_chosen ....
 def plot_spec():
     return "this is not implemented ! hahaha"
+
+# currentFile = PlotWave(" ", 0, 0)
+
+def set_file():
+    filePath = findFile()
+    sample_rate, data = wavfile.read(filePath)
+    global currentFile
+    currentFile = PlotWave(filePath, sample_rate, data)
+
+def plot():
+    global currentFile
+    # print(currentFile.get_name())
+    currentFile.plot_as_chosen(load_btn_2, _plot_frame)
 
 if __name__ == "__main__":
     _root = Tk()
@@ -20,10 +33,12 @@ if __name__ == "__main__":
     _base.grid(row=0, column=0, sticky=(N, E, S, W))
 
     # frame to hold the buttons
+    global _button_frame
     _button_frame = ttk.LabelFrame(_base, text="Buttons")
     _button_frame.grid(row=1, column=1, sticky=(E, W))
 
     # frame to hold the plots
+    global _plot_frame
     _plot_frame = ttk.LabelFrame(_base, text="Plots")
     _plot_frame.grid(row=3, column=1, sticky=(E, W))
 
@@ -36,17 +51,18 @@ if __name__ == "__main__":
 
     # button to load + plot audio
     # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
-    _load_btn = ttk.Button(_button_frame, text="Load Audio File", command=PlotClass.findFile)
+    _load_btn = ttk.Button(_button_frame, text="Load Audio File", command=set_file)
     _load_btn.grid(row=1, column=1, sticky=W)
 
     # depending on the plot chosen in the combobox, plot_as_chosen will plot the specific plot
     # currently, it is set up that we have one window that displays plots, and the window will change its display depending on the combobox choice
     # maybe choose to have all the plots at once? the display selector seems cool, though...
-    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=PlotClass.PlotWave.plot_as_chosen)
+    global load_btn_2
+    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=plot)
     load_btn_2.grid(row=2, column=2, sticky=W)
 
     # button to combine rt60 plots, not implemented at all! just placeholder
-    rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies", command=PlotClass.PlotRT60.plot_all_rt60)
+    rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies", command=PlotRT60.plot_all_rt60)
     rt60_combo_btn.grid(row=1, column=2, sticky=W)
 
     _root.mainloop()

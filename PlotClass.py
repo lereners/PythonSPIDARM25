@@ -33,27 +33,33 @@ class BaseAudio():
         # Load the audio file
         samplerate, data = wavfile.read(file_name)
 
+    def set_name(self, fname):
+        self.file_name = fname
+
 class PlotWave(BaseAudio):
     def __init__(self, wav_fname, sample_rate, data):
         self.wav_fname = wav_fname
         self.samplerate = sample_rate
         self.data = data
 
-    def plot_wave(self, data, sample_rate):
-            print(f"number of channels = {data.shape[len(data.shape) - 1]}")
-            print(f'this is data shape {data.shape}')
-            print(f"sample rate = {sample_rate}Hz")
-            length = data.shape[0] / sample_rate
+    def get_name(self):
+        return self.wav_fname
+    
+    def plot_wave(self):
+            print(f"number of channels = {self.data.shape[len(self.data.shape) - 1]}")
+            print(f'this is data shape {self.data.shape}')
+            print(f"sample rate = {self.samplerate}Hz")
+            length = self.data.shape[0] / self.samplerate
             print(f"length = {length}s")
 
-            time = np.linspace(0., length, data.shape[0])
+            time = np.linspace(0., length, self.data.shape[0])
 
             # using matplotlib figures
             fig = Figure(figsize=(7, 5), dpi=100)
             plt = fig.add_subplot(111)
 
             # plot formatting
-            plt.plot(time, data[:, 0], label="Left channel")
+            plt.plot(time, self.data[:, 0], label="Left channel")
             plt.set_xlabel("Time [s]")
             plt.set_ylabel("Amplitude")
             # change this to file name + plot type?
@@ -70,22 +76,25 @@ class PlotWave(BaseAudio):
             # maybe to choose low, mid, high rt60 frequencies?
             # not sure if this would actually work, just using dummy numbers (2000, 5000)
 
-    def plot_as_chosen(self, data, sample_rate):
+    # def plot_as_chosen(self, data, sample_rate):
+    def plot_as_chosen(self, choice, _plot_frame):
         # these 4 have placeholder values, just to test the text appearance
         # likely have these as class properties
         file_name = "FILE NAME!!"
         audio_length = 34
-        frequencies, power = welch(data, sample_rate, nperseg=4096)
-        dominant_frequency = frequencies[np.argmax(power)]
+        # frequencies, power = welch(self.data, self.samplerate, nperseg=4096)
+        frequencies, power = welch(self.data, self.samplerate, nperseg=2)
+        dominant_frequency = frequencies[np.argmax(2)]
         print(f'dominant_frequency is {round(dominant_frequency)}Hz')
         res_freq = dominant_frequency
         rt60_diff = 0.7
 
-        plot_choice = gui.plot_var.get()
+        # plot_choice = gui.plot_var.get()
+        plot_choice = choice
 
         # combine all plotting funcs into a class method?!
         if plot_choice == "Waveform":
-            BaseAudio.plot_wave()
+            self.plot_wave()
         elif plot_choice == "Low RT60":
             PlotRT60.plot_rt60(1000)
         elif plot_choice == "Med RT60":
@@ -96,7 +105,7 @@ class PlotWave(BaseAudio):
             PlotRT60.plot_spec()
 
         # height=2 means that text displays 4 lines of text
-        audio_info = Text(gui._plot_frame, height=4)
+        audio_info = Text(_plot_frame, height=4)
         # row=3 is below the plot (row=2)
         audio_info.grid(row=3, column=1, sticky=(E, W))
         # displaying the required information
