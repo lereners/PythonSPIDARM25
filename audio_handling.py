@@ -1,7 +1,7 @@
 from tkinter.filedialog import askopenfilename
 from pydub import AudioSegment
 from pathlib import Path
-import wave
+import os
 # tk.Tk().withdraw() # part of the import if you are not using other tkinter functions
 
 # allows the user to select either a WAV or MP3 file and returns a .wav file
@@ -32,3 +32,10 @@ def findFile():
     #     waveFile.close()
     # returns a WAV file
     return filePath
+
+
+def import_audio():
+    fpath = findFile()
+    fname = os.path.basename(fpath)
+
+    return

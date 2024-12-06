@@ -1,20 +1,9 @@
-
 # maybe to choose low, mid, high rt60 frequencies?
 # not sure if this would actually work, just using dummy numbers (2000, 5000)
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
-
-import os
-from audio_handling import findFile
-
-from scipy.io import wavfile
-from scipy.signal import butter, filtfilt, welch
-
-import numpy as np
 # using Figure to place the plot in the GUI
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import PlotClass
 
 
@@ -47,12 +36,8 @@ if __name__ == "__main__":
 
     # button to load + plot audio
     # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
-    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=PlotClass.findFile)
+    _load_btn = ttk.Button(_button_frame, text="Load Audio File", command=PlotClass.findFile)
     _load_btn.grid(row=1, column=1, sticky=W)
-
-
-
-    
 
     # depending on the plot chosen in the combobox, plot_as_chosen will plot the specific plot
     # currently, it is set up that we have one window that displays plots, and the window will change its display depending on the combobox choice
@@ -63,6 +48,5 @@ if __name__ == "__main__":
     # button to combine rt60 plots, not implemented at all! just placeholder
     rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies", command=PlotClass.PlotRT60.plot_all_rt60)
     rt60_combo_btn.grid(row=1, column=2, sticky=W)
-
 
     _root.mainloop()

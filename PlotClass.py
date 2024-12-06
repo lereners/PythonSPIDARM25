@@ -1,20 +1,11 @@
 from tkinter import *
-from tkinter import ttk
-import tkinter as tk
-
-import os
 from audio_handling import findFile
-
-
-
 from scipy.io import wavfile
 from scipy.signal import butter, filtfilt, welch
-
 import numpy as np
 # using Figure to place the plot in the GUI
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
 import gui
 
 # Find the target frequency closest to target Hz
@@ -36,22 +27,13 @@ def find_nearest_value(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-#Gets the filepath, and then returns the filename+extension
-def getFileName():
-    #finds the file path using findFile function
-    filepath = findFile()
-    #To check for filepath return
-    print(filepath)
-    #returns filename + extension
-    return os.path.basename(filepath)
-
-class PlotGraph():
-    def __init__(self):
-        wav_fname = getFileName()
+class BaseAudio():
+    def __init__(self, fname):
+        file_name = fname
         # Load the audio file
-        samplerate, data = wavfile.read(wav_fname)
+        samplerate, data = wavfile.read(file_name)
 
-class PlotWave(PlotGraph):
+class PlotWave(BaseAudio):
     def __init__(self, wav_fname, sample_rate, data):
         self.wav_fname = wav_fname
         self.samplerate = sample_rate
@@ -103,7 +85,7 @@ class PlotWave(PlotGraph):
 
         # combine all plotting funcs into a class method?!
         if plot_choice == "Waveform":
-            plot_wave = plot_wave()
+            BaseAudio.plot_wave()
         elif plot_choice == "Low RT60":
             PlotRT60.plot_rt60(1000)
         elif plot_choice == "Med RT60":
@@ -126,7 +108,7 @@ class PlotWave(PlotGraph):
         audio_info.insert(INSERT, f"RT60 difference: {rt60_diff} ")
 
 
-class PlotRT60(PlotGraph):
+class PlotRT60(BaseAudio):
     def __init__(self, wav_fname, data, sample_rate):
         self.wav_fname = wav_fname
         self.sample_rate = sample_rate
@@ -198,7 +180,7 @@ class PlotRT60(PlotGraph):
             plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
             plot.draw()
 
-    def plot_all_rt60():
+    def plot_all_rt60(self):
         # Placeholder values for testing
         file_name = "FILE NAME!!"
         audio_length = 34
