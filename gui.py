@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # depending on the plot chosen in the combobox, plot_as_chosen will plot the specific plot
     # currently, it is set up that we have one window that displays plots, and the window will change its display depending on the combobox choice
     # maybe choose to have all the plots at once? the display selector seems cool, though...
-    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=PlotClass.BaseAudio.plot_as_chosen)
+    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=PlotClass.BaseAudio.plot_as_chosen(plot_var.get()))
     load_btn_2.grid(row=2, column=2, sticky=W)
 
     # button to combine rt60 plots, not implemented at all! just placeholder

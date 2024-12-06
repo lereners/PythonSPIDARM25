@@ -64,7 +64,8 @@ class BaseAudio():
             # maybe to choose low, mid, high rt60 frequencies?
             # not sure if this would actually work, just using dummy numbers (2000, 5000)
 
-    def plot_as_chosen(self, data, sample_rate):
+    # plot_choice from combobox - new argument
+    def plot_as_chosen(self, data, sample_rate, plot_choice):
         # these 4 have placeholder values, just to test the text appearance
         # likely have these as class properties
         file_name = "FILE NAME!!"
@@ -74,8 +75,6 @@ class BaseAudio():
         print(f'dominant_frequency is {round(dominant_frequency)}Hz')
         res_freq = dominant_frequency
         rt60_diff = 0.7
-
-        plot_choice = gui.plot_var.get()
 
         # combine all plotting funcs into a class method?!
         if plot_choice == "Waveform":
