@@ -1,12 +1,11 @@
 from tkinter import *
-from audio_handling import findFile
 from scipy.io import wavfile
 from scipy.signal import butter, filtfilt, welch
 import numpy as np
 # using Figure to place the plot in the GUI
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import gui
+import os
 
 # Find the target frequency closest to target Hz
 def find_target_frequency(freqs, target):
@@ -28,28 +27,19 @@ def find_nearest_value(array, value):
     return array[idx]
 
 class BaseAudio():
-    def __init__(self, fname):
-        file_name = fname
+    def __init__(self, fpath, master_frame):
+        self.file_name = os.path.basename(fpath)
+        self.file_path = fpath
         # Load the audio file
-        samplerate, data = wavfile.read(file_name)
+        self.sample_rate, self.data = wavfile.read(self.file_name)
+        self.master_frame = master_frame
+        print("hello!!! init BaseAudio")
 
-    def set_name(self, fname):
-        self.file_name = fname
-
-class PlotWave(BaseAudio):
-    def __init__(self, wav_fname, sample_rate, data):
-        self.wav_fname = wav_fname
-        self.samplerate = sample_rate
-        self.data = data
-
-    def get_name(self):
-        return self.wav_fname
-    
     def plot_wave(self):
             print(f"number of channels = {self.data.shape[len(self.data.shape) - 1]}")
             print(f'this is data shape {self.data.shape}')
-            print(f"sample rate = {self.samplerate}Hz")
-            length = self.data.shape[0] / self.samplerate
+            print(f"sample rate = {self.sample_rate}Hz")
+            length = self.data.shape[0] / self.sample_rate
             print(f"length = {length}s")
 
             time = np.linspace(0., length, self.data.shape[0])
@@ -69,43 +59,39 @@ class PlotWave(BaseAudio):
             plt.legend()
 
             # displaying the plot
-            plot = FigureCanvasTkAgg(fig, master=gui._plot_frame)
+            plot = FigureCanvasTkAgg(fig, master=self.master_frame)
             plot_display = plot.get_tk_widget()
             plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
             plot.draw()
             # maybe to choose low, mid, high rt60 frequencies?
             # not sure if this would actually work, just using dummy numbers (2000, 5000)
 
-    # def plot_as_chosen(self, data, sample_rate):
-    def plot_as_chosen(self, choice, _plot_frame):
+    # plot_choice from combobox - new argument
+    def plot_as_chosen(self, plot_choice):
         # these 4 have placeholder values, just to test the text appearance
         # likely have these as class properties
         file_name = "FILE NAME!!"
         audio_length = 34
-        # frequencies, power = welch(self.data, self.samplerate, nperseg=4096)
-        frequencies, power = welch(self.data, self.samplerate, nperseg=2)
-        dominant_frequency = frequencies[np.argmax(2)]
+        frequencies, power = welch(self.data, self.sample_rate, nperseg=4096)
+        dominant_frequency = frequencies[np.argmax(power)]
         print(f'dominant_frequency is {round(dominant_frequency)}Hz')
         res_freq = dominant_frequency
         rt60_diff = 0.7
-
-        # plot_choice = gui.plot_var.get()
-        plot_choice = choice
 
         # combine all plotting funcs into a class method?!
         if plot_choice == "Waveform":
             self.plot_wave()
         elif plot_choice == "Low RT60":
-            PlotRT60.plot_rt60(1000)
+            self.plot_rt60(1000)
         elif plot_choice == "Med RT60":
-            PlotRT60.plot_rt60(2000)
+            self.plot_rt60(2000)
         elif plot_choice == "High RT60":
-            PlotRT60.plot_rt60(5000)
+            self.plot_rt60(5000)
         elif plot_choice == "Spectrogram":
-            PlotRT60.plot_spec()
+            self.plot_spec()
 
         # height=2 means that text displays 4 lines of text
-        audio_info = Text(_plot_frame, height=4)
+        audio_info = Text(self.master_frame, height=4)
         # row=3 is below the plot (row=2)
         audio_info.grid(row=3, column=1, sticky=(E, W))
         # displaying the required information
@@ -115,13 +101,6 @@ class PlotWave(BaseAudio):
         audio_info.insert(INSERT, f"Length: {audio_length}s.\n")
         audio_info.insert(INSERT, f"Resonant frequency: {res_freq} Hz.\n")
         audio_info.insert(INSERT, f"RT60 difference: {rt60_diff} ")
-
-
-class PlotRT60(BaseAudio):
-    def __init__(self, wav_fname, data, sample_rate):
-        self.wav_fname = wav_fname
-        self.sample_rate = sample_rate
-        self.data = data
 
     def plot_rt60(self, data, sample_rate, target):
             # Define the time vector
@@ -184,7 +163,7 @@ class PlotRT60(BaseAudio):
             print(f'The RT60 reverb time at freq {int(target_frequency)}Hz is {round(abs(rt60), 2)} seconds')
 
             # displaying the plot
-            plot = FigureCanvasTkAgg(fig_rt60, master=gui._plot_frame)
+            plot = FigureCanvasTkAgg(fig_rt60, master=self.master_frame)
             plot_display = plot.get_tk_widget()
             plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
             plot.draw()
@@ -263,7 +242,7 @@ class PlotRT60(BaseAudio):
         plt.grid(True)
 
         # Displaying the plot
-        plot = FigureCanvasTkAgg(fig_rt60, master=gui._plot_frame)
+        plot = FigureCanvasTkAgg(fig_rt60, master=self.master_frame)
         plot_display = plot.get_tk_widget()
         plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
-        plot.draw()        
+        plot.draw()
