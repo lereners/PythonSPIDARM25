@@ -5,7 +5,7 @@ import numpy as np
 # using Figure to place the plot in the GUI
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import gui
+import os
 
 # Find the target frequency closest to target Hz
 def find_target_frequency(freqs, target):
@@ -27,11 +27,12 @@ def find_nearest_value(array, value):
     return array[idx]
 
 class BaseAudio():
-    def __init__(self, fname, fpath):
-        self.file_name = fname
+    def __init__(self, fpath, master_frame):
+        self.file_name = os.path.basename(fpath)
         self.file_path = fpath
         # Load the audio file
-        self.samplerate, self.data = wavfile.read(self.file_name)
+        self.sample_rate, self.data = wavfile.read(self.file_name)
+        self.master_frame = master_frame
         print("hello!!! init BaseAudio")
 
     def plot_wave(self):
@@ -58,7 +59,7 @@ class BaseAudio():
             plt.legend()
 
             # displaying the plot
-            plot = FigureCanvasTkAgg(fig, master=gui._plot_frame)
+            plot = FigureCanvasTkAgg(fig, master=self.master_frame)
             plot_display = plot.get_tk_widget()
             plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
             plot.draw()
@@ -90,7 +91,7 @@ class BaseAudio():
             self.plot_spec()
 
         # height=2 means that text displays 4 lines of text
-        audio_info = Text(gui._plot_frame, height=4)
+        audio_info = Text(self.master_frame, height=4)
         # row=3 is below the plot (row=2)
         audio_info.grid(row=3, column=1, sticky=(E, W))
         # displaying the required information
@@ -162,7 +163,7 @@ class BaseAudio():
             print(f'The RT60 reverb time at freq {int(target_frequency)}Hz is {round(abs(rt60), 2)} seconds')
 
             # displaying the plot
-            plot = FigureCanvasTkAgg(fig_rt60, master=gui._plot_frame)
+            plot = FigureCanvasTkAgg(fig_rt60, master=self.master_frame)
             plot_display = plot.get_tk_widget()
             plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
             plot.draw()
@@ -241,7 +242,7 @@ class BaseAudio():
         plt.grid(True)
 
         # Displaying the plot
-        plot = FigureCanvasTkAgg(fig_rt60, master=gui._plot_frame)
+        plot = FigureCanvasTkAgg(fig_rt60, master=self.master_frame)
         plot_display = plot.get_tk_widget()
         plot_display.grid(row=2, column=1, sticky=(N, E, S, W))
-        plot.draw()        
+        plot.draw()
