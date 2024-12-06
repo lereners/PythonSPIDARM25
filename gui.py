@@ -10,6 +10,10 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+from audio_handling import *
+from pathlib import Path
+
+currentFile = ''
 
 # Band-pass filter function
 def bandpass_filter(data, lowcut, highcut, fs, order=4):
@@ -30,9 +34,20 @@ def find_nearest_value(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
+def find_and_plot():
+    global currentFile
+    currentFile = findFile()
+    plot_wave()
+
 def plot_wave():
-    wav_fname = '16bit2chan.wav'
-    samplerate, data = wavfile.read(wav_fname)
+    # =====================================================
+    # global currentFile
+    # if (currentFile == ''):
+    #     currentFile = findFile()
+    # samplerate, data = wavfile.read(currentFile)
+    # =====================================================
+    samplerate, data = wavfile.read("16bit2chan.wav")
+
     print(f"number of channels = {data.shape[len(data.shape) - 1]}")
     print(f'this is data shape {data.shape}')
     print(f"sample rate = {samplerate}Hz")
@@ -64,11 +79,20 @@ def plot_wave():
 # taken from colab, added target argument to choose the target frequency (possibly to plot the low, mid, high)
 # have not modified a lot of this code, just the stuff to use the matplotlib figure
 def plot_rt60(target):
+    # =====================================================
+    # global currentFile
+    # if (currentFile == ''):
+    #     currentFile = findFile()
+    
+    # sample_rate, data = wavfile.read(currentFile)
+    # =====================================================
     # Load the audio file
     sample_rate, data = wavfile.read("16bit1chan.wav")
 
     # Define the time vector
     t = np.linspace(0, len(data) / sample_rate, len(data), endpoint=False)
+    # length = data.shape[0] / sample_rate
+    # t = np.linspace(0., length, data.shape[0])
 
     # Calculate the Fourier Transform of the signal
     fft_result = np.fft.fft(data)
@@ -263,7 +287,8 @@ if __name__ == "__main__":
 
     # button to load + plot audio
     # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
-    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=plot_wave)
+    # _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=plot_wave)
+    _load_btn = ttk.Button(_button_frame, text="Load and Plot Audio File", command=find_and_plot)
     _load_btn.grid(row=1, column=1, sticky=W)
 
     # frame to hold the plots
