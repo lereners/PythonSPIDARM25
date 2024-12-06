@@ -7,6 +7,7 @@ from scipy.signal import butter, filtfilt
 
 import numpy as np
 # using Figure to place the plot in the GUI
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -34,6 +35,7 @@ def plot_wave():
     wav_fname = '16bit2chan.wav'
     samplerate, data = wavfile.read(wav_fname)
     print(f"number of channels = {data.shape[len(data.shape) - 1]}")
+    channel = data.shape[len(data.shape) - 1]
     print(f'this is data shape {data.shape}')
     print(f"sample rate = {samplerate}Hz")
     length = data.shape[0] / samplerate
@@ -46,14 +48,20 @@ def plot_wave():
     plt = fig.add_subplot(111)
 
     # plot formatting
-    plt.plot(time, data[:, 0], label="Left channel")
-    plt.set_xlabel("Time [s]")
-    plt.set_ylabel("Amplitude")
-    # change this to file name + plot type?
-    # ex: scream.wav Waveform
-    # ex: shout.wav RT60 Combines
-    plt.set_title("Audio File Plotted")
-    plt.legend()
+    if(channel == 1):
+        plt.plot(time, data[:, 0], label="Left channel")
+        plt.set_xlabel("Time [s]")
+        plt.set_ylabel("Amplitude")
+        plt.set_title("Audio File Plotted")
+        plt.legend()
+
+    if(channel == 2):
+        plt.plot(time, data[:, 0], label="Left channel")
+        plt.plot(time, data[:, 1], label="Right channel")
+        plt.legend()
+        plt.xlabel("Time [s]")
+        plt.ylabel("Amplitude")
+        plt.show()
 
     # displaying the plot
     plot = FigureCanvasTkAgg(fig, master=_plot_frame)
@@ -167,9 +175,27 @@ def plot_as_chosen():
     audio_info.insert(INSERT, f"Resonant frequency: {res_freq} Hz.\n")
     audio_info.insert(INSERT, f"RT60 difference: {rt60_diff} ")
 
-# just a placeholder for plot_as_chosen ....
+# Used to plot a spectogram on a colored chart.
 def plot_spec():
-    return "this is not implemented ! hahaha"
+    sample_rate, data = wavfile.read('16bitmono.wav')
+    # Check if the audio has 2 channels
+    if len(data.shape) == 2:
+        # Split into left and right channels
+        left_channel = data[:, 0]
+        right_channel = data[:, 1]
+        # Optionally, combine the channels (e.g., average)
+        data = (left_channel + right_channel) / 2
+    else:
+        # Mono audio, no change needed
+        data = data
+    spectrum, freqs, t, im = plt.specgram(data, Fs=sample_rate, \
+    NFFT=1024, cmap=plt.get_cmap('autumn_r'))
+    cbar = plt.colorbar(im)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Frequency (Hz)')
+    cbar.set_label('Intensity (dB)')
+    plt.show()
+
 
 if __name__ == "__main__":
     _root = Tk()
