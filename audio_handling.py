@@ -2,6 +2,7 @@ from tkinter.filedialog import askopenfilename
 from pydub import AudioSegment
 from pathlib import Path
 import os
+from PlotClass import BaseAudio
 # tk.Tk().withdraw() # part of the import if you are not using other tkinter functions
 
 # allows the user to select either a WAV or MP3 file and returns a .wav file
@@ -10,6 +11,7 @@ def findFile():
     fn = askopenfilename(filetypes=[("WAV Files", "*.wav"), ('MP3 Files', '*.mp3')])
     extension = Path(fn).suffix # holds the extension of the selected file
     filePath = fn # stores a copy of the selected file's path
+    fileName = os.path.basename(filePath)
 
     # checks to see if the file is an MP3
     if (extension == ".mp3"):                                                                        
@@ -31,11 +33,5 @@ def findFile():
     #     #waveFile.setsampwidth(16)
     #     waveFile.close()
     # returns a WAV file
-    return filePath
+    return BaseAudio(filePath, fileName)
 
-
-def import_audio():
-    fpath = findFile()
-    fname = os.path.basename(fpath)
-
-    return

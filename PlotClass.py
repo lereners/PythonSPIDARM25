@@ -1,12 +1,10 @@
 from tkinter import *
-from audio_handling import findFile
 from scipy.io import wavfile
 from scipy.signal import butter, filtfilt, welch
 import numpy as np
 # using Figure to place the plot in the GUI
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import gui
 
 # Find the target frequency closest to target Hz
 def find_target_frequency(freqs, target):
@@ -28,32 +26,28 @@ def find_nearest_value(array, value):
     return array[idx]
 
 class BaseAudio():
-    def __init__(self, fname):
-        file_name = fname
+    def __init__(self, fname, fpath):
+        self.file_name = fname
+        self.file_path = fpath
         # Load the audio file
-        samplerate, data = wavfile.read(file_name)
+        self.samplerate, self.data = wavfile.read(self.file_name)
+        print("hello!!! init BaseAudio")
 
-class PlotWave(BaseAudio):
-    def __init__(self, wav_fname, sample_rate, data):
-        self.wav_fname = wav_fname
-        self.samplerate = sample_rate
-        self.data = data
-
-    def plot_wave(self, data, sample_rate):
-            print(f"number of channels = {data.shape[len(data.shape) - 1]}")
-            print(f'this is data shape {data.shape}')
-            print(f"sample rate = {sample_rate}Hz")
-            length = data.shape[0] / sample_rate
+    def plot_wave(self):
+            print(f"number of channels = {self.data.shape[len(self.data.shape) - 1]}")
+            print(f'this is data shape {self.data.shape}')
+            print(f"sample rate = {self.sample_rate}Hz")
+            length = self.data.shape[0] / self.sample_rate
             print(f"length = {length}s")
 
-            time = np.linspace(0., length, data.shape[0])
+            time = np.linspace(0., length, self.data.shape[0])
 
             # using matplotlib figures
             fig = Figure(figsize=(7, 5), dpi=100)
             plt = fig.add_subplot(111)
 
             # plot formatting
-            plt.plot(time, data[:, 0], label="Left channel")
+            plt.plot(time, self.data[:, 0], label="Left channel")
             plt.set_xlabel("Time [s]")
             plt.set_ylabel("Amplitude")
             # change this to file name + plot type?
