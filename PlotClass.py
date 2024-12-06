@@ -87,11 +87,11 @@ class PlotWave(BaseAudio):
         if plot_choice == "Waveform":
             BaseAudio.plot_wave()
         elif plot_choice == "Low RT60":
-            PlotRT60.plot_rt60(1000)
+            PlotRT60.plot_rt60(250)
         elif plot_choice == "Med RT60":
             PlotRT60.plot_rt60(2000)
         elif plot_choice == "High RT60":
-            PlotRT60.plot_rt60(5000)
+            PlotRT60.plot_rt60(8000)
         elif plot_choice == "Spectrogram":
             PlotRT60.plot_spec()
 
