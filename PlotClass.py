@@ -31,7 +31,7 @@ class BaseAudio():
         self.file_name = os.path.basename(fpath)
         self.file_path = fpath
         # Load the audio file
-        self.sample_rate, self.data = wavfile.read(self.file_name)
+        self.sample_rate, self.data = wavfile.read(self.file_path)
         self.master_frame = master_frame
         self.length = self.data.shape[0] / self.sample_rate
         self.frequencies, self.power = welch(self.data, self.sample_rate, nperseg=4096)
@@ -53,14 +53,17 @@ class BaseAudio():
             fig = Figure(figsize=(7, 5), dpi=100)
             plt = fig.add_subplot(111)
 
-            # plot formatting
-            plt.plot(time, self.data[:, 0], label="Left channel")
+            if len(self.data.shape) == 1:
+                plt.plot(time, self.data, label="Mono channel")
+                plt.set_title("Mono-Channel Audio File Plotted")
+
+            if len(self.data.shape) == 2:
+                plt.plot(time, self.data[:, 0], label="Left channel")
+                plt.plot(time, self.data[:, 1], label="Right channel")
+                plt.set_title("Two-Channel Audio File Plotted")
+
             plt.set_xlabel("Time [s]")
             plt.set_ylabel("Amplitude")
-            # change this to file name + plot type?
-            # ex: scream.wav Waveform
-            # ex: shout.wav RT60 Combined
-            plt.set_title("Audio File Plotted")
             plt.legend()
 
             # displaying the plot
@@ -74,7 +77,6 @@ class BaseAudio():
     def plot_rt60(self, data, sample_rate, target):
             # Define the time vector
             t = np.linspace(0, len(data) / sample_rate, len(data), endpoint=False)
-
 
             # Calculate the Fourier Transform of the signal
             fft_result = np.fft.fft(data)
@@ -221,11 +223,11 @@ class BaseAudio():
         if plot_choice == "Waveform":
             self.plot_wave()
         elif plot_choice == "Low RT60":
-            self.plot_rt60(1000)
+            self.plot_rt60(self.data, self.sample_rate, 1000)
         elif plot_choice == "Med RT60":
-            self.plot_rt60(2000)
+            self.plot_rt60(self.data, self.sample_rate, 2000)
         elif plot_choice == "High RT60":
-            self.plot_rt60(5000)
+            self.plot_rt60(self.data, self.sample_rate, 5000)
         elif plot_choice == "Spectrogram":
             self.plot_spec()
             return

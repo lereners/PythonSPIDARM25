@@ -9,29 +9,40 @@ from pydub import AudioSegment
 from pathlib import Path
 from PlotClass import BaseAudio
 
-global chosen_file_path, working_audio
+chosen_file_path = None
 working_audio = None
 
 # tk.Tk().withdraw() # part of the import if you are not using other tkinter functions
 # allows the user to select either a WAV or MP3 file and returns a .wav file
 def findFile():
+    global chosen_file_path, working_audio
     # opens File Explorer and allows the user to find and select either a WAV or MP3 file, then stores it in "fn"
     fn = askopenfilename(filetypes=[("WAV Files", "*.wav"), ('MP3 Files', '*.mp3')])
+    # in case you don't select a file
+    if not fn:
+        print("No file selection")
+        return
+
     extension = Path(fn).suffix  # holds the extension of the selected file
     filePath = fn  # stores a copy of the selected file's path
 
     # checks to see if the file is an MP3
-    if (extension == ".mp3"):
+    if extension == ".mp3":
         # makes a dummy WAV file to store the converted audio
-        dst = "Converted Sound File.wav"
-
+        dst = Path("Converted Sound File.wav")
         # converts the selected MP3 file into WAV format
         sound = AudioSegment.from_mp3(fn)
         sound.export(dst, format="wav")
-        filePath = dst
+        filePath = str(dst)
+
+    # checkpoint - does the file even exist... ? T-T
+    if not Path(filePath).is_file():
+        print(f"{filePath} not found")
+        return
 
     chosen_file_path = filePath
     working_audio = BaseAudio(chosen_file_path, _plot_frame)
+    print(f"Loaded {filePath}")
 
     # sw = 0
     # with wave.open(filePath, "rb") as waveFile:
