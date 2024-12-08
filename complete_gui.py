@@ -14,6 +14,22 @@ import os
 chosen_file = None
 colors = ["red", "orange", "green", "blue"]
 
+# implement soon
+
+def find_decibels(self):
+    if self.channel_num == 1:
+        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2))
+    else:
+        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2, axis=0))  # Average across channels
+
+    # Convert RMS to decibels
+    decibels = 20 * np.log10(rms)
+    print("The audio file is: " + decibels + "dBFS")
+
+
+
+
+
 def audio_display(file_path):
     wave_subplot.clear()
     rt60_subplot.clear()
