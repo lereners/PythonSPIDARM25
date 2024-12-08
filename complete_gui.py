@@ -16,15 +16,7 @@ colors = ["red", "orange", "green", "blue"]
 
 # implement soon
 
-def find_decibels(self):
-    if self.channel_num == 1:
-        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2))
-    else:
-        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2, axis=0))  # Average across channels
 
-    # Convert RMS to decibels
-    decibels = 20 * np.log10(rms)
-    print("The audio file is: " + decibels + "dBFS")
 
 
 
@@ -45,9 +37,20 @@ def audio_display(file_path):
         else:
             return data.shape[1]
 
+def find_decibels():
+        if find_channel_num() == 1:
+            rms = np.sqrt(np.mean(data / 32768.0 ** 2))
+        else:
+            rms = np.sqrt(np.mean(data / 32768.0 ** 2, axis=0))  # Average across channels
+
+        # Convert RMS to decibels
+        decibels = 20 * np.log10(rms)*-1
+        return decibels
+    
     sample_rate, data = wavfile.read(file_path)
     length = data.shape[0] / sample_rate
     diff_display.config(text=f'RT60 Difference: {length - 0.5}')
+    decibel_display.config(text=f'Decibels: {find_decibels()}')
     t = np.linspace(0, length, data.shape[0])
     time_display.config(text=f'Time: {length} s')
     channel_num = find_channel_num()
@@ -401,7 +404,7 @@ center_2 = tk.Frame(_root)
 center_2.grid(row=2, column=1, padx=10, pady=10)
 
 bottom = tk.Frame(_root)
-bottom.grid(row=3, column=1, padx=10, pady=10)
+bottom.grid(row=4, column=1, padx=10, pady=10)
 
 import_btn = ttk.Button(buttons, text="Import Audio File", command=choose_file)
 import_btn.pack()
@@ -417,6 +420,9 @@ res_display.pack()
 
 diff_display = tk.Label(bottom, text ="", fg="black")
 diff_display.pack()
+
+decibel_display = tk.Label(bottom, text ="", fg="black")
+decibel_display.pack()
 
 freq_var = tk.StringVar(center_1, value='Display Frequency')
 freq_label = tk.Label(center_1, text='Frequency Choice')
