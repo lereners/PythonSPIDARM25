@@ -55,6 +55,15 @@ class BaseAudio():
         else:
             return self.data.shape[1]
 
+    def find_decibels(self):
+        if self.channel_num == 1:
+            rms = np.sqrt(np.mean(self.data / 32768.0**2))
+        else:
+            rms = np.sqrt(np.mean(self.data / 32768.0**2, axis=0))  # Average across channels
+        
+        #Convert RMS to decibels
+        decibels = 20 * np.log10(rms)
+
     def plot_wave(self):
             print(f"number of channels = {self.channel_num}")
             print(f'this is data shape {self.data.shape}')
