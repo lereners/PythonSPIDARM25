@@ -16,15 +16,7 @@ colors = ["red", "orange", "green", "blue"]
 
 # implement soon
 
-def find_decibels(self):
-    if self.channel_num == 1:
-        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2))
-    else:
-        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2, axis=0))  # Average across channels
 
-    # Convert RMS to decibels
-    decibels = 20 * np.log10(rms)
-    print("The audio file is: " + decibels + "dBFS")
 
 
 
@@ -45,9 +37,20 @@ def audio_display(file_path):
         else:
             return data.shape[1]
 
+def find_decibels():
+        if find_channel_num() == 1:
+            rms = np.sqrt(np.mean(data / 32768.0 ** 2))
+        else:
+            rms = np.sqrt(np.mean(data / 32768.0 ** 2, axis=0))  # Average across channels
+
+        # Convert RMS to decibels
+        decibels = 20 * np.log10(rms)*-1
+        return decibels
+    
     sample_rate, data = wavfile.read(file_path)
     length = data.shape[0] / sample_rate
     diff_display.config(text=f'RT60 Difference: {length - 0.5}')
+    decibel_display.config(text=f'Decibels: {find_decibels()}')
     t = np.linspace(0, length, data.shape[0])
     time_display.config(text=f'Time: {length} s')
     channel_num = find_channel_num()
@@ -239,20 +242,99 @@ def freq_range(freq_choice):
 
 def process_band(event):
     choice = freq_choice_input.get()
-
     sample_rate, data = wavfile.read(chosen_file)
     range = freq_range(choice)
     filtered_data = bandpass_filter(data, range[0], range[1], sample_rate)
-    plot_filtered(filtered_data, sample_rate, choice)
+    plot_filtered(filtered_data, sample_rate, choice, range[1])
 
-def plot_filtered(filtered_data, sample_rate, freq_name):
+def plot_filtered(filtered_data, sample_rate, freq_name, target):
     rt60_subplot.clear()
+
+    if len(filtered_data.shape) == 1:
+        channel_num = 1
+    else:
+        channel_num = filtered_data.shape[1]
+
     t = np.linspace(0, len(filtered_data) / sample_rate, len(filtered_data), endpoint=False)
-    rt60_subplot.plot(t, filtered_data, label=f'{freq_name} RT60 Plot')
+
+    if channel_num > 1:
+        for i in range(channel_num):
+            channel_data = filtered_data[:,i]
+        # rt60_subplot.plot(t, combined_data, color=colors[0])
+    # else:
+       #  rt60_subplot.plot(t, filtered_data, color=colors[0])
+
+        fft_result = np.fft.fft(channel_data)
+        spectrum = np.abs(fft_result)  # Get magnitude spectrum
+        freqs = np.fft.fftfreq(len(channel_data), d=1 / sample_rate)
+
+        # Use only positive frequencies
+        freqs = freqs[:len(freqs) // 2]
+        spectrum = spectrum[:len(spectrum) // 2]
+
+        # Find the target frequency
+        target_frequency = find_target_frequency(freqs, target)
+
+        # Apply a band-pass filter around the target frequency
+        filtered_data = bandpass_filter(channel_data, target_frequency - 50, target_frequency + 50, sample_rate)
+
+        # Convert the filtered audio signal to decibel scale
+        data_in_db = 10 * np.log10(np.abs(filtered_data) + 1e-10)  # Avoid log of zero
+
+        # Plot the filtered signal in decibel scale
+        rt60_subplot.plot(t, data_in_db, label=f"{target} Hz", linewidth=1, alpha=0.7)
+
+    else:
+        channel_data = filtered_data
+        # rt60_subplot.plot(t, combined_data, color=colors[0])
+        # else:
+        #  rt60_subplot.plot(t, filtered_data, color=colors[0])
+
+        fft_result = np.fft.fft(channel_data)
+        spectrum = np.abs(fft_result)  # Get magnitude spectrum
+        freqs = np.fft.fftfreq(len(channel_data), d=1 / sample_rate)
+
+        # Use only positive frequencies
+        freqs = freqs[:len(freqs) // 2]
+        spectrum = spectrum[:len(spectrum) // 2]
+
+        # Find the target frequency
+        target_frequency = find_target_frequency(freqs, target)
+
+        # Apply a band-pass filter around the target frequency
+        filtered_data = bandpass_filter(channel_data, target_frequency - 50, target_frequency + 50, sample_rate)
+
+        # Convert the filtered audio signal to decibel scale
+        data_in_db = 10 * np.log10(np.abs(filtered_data) + 1e-10)  # Avoid log of zero
+
+        # Plot the filtered signal in decibel scale
+        rt60_subplot.plot(t, data_in_db, label=f"{target} Hz", linewidth=1, alpha=0.7)
+
+    index_of_max = np.argmax(data_in_db)
+    value_of_max = data_in_db[index_of_max]
+
+  #  # Slice the array from the maximum value
+    sliced_array = data_in_db[index_of_max:]
+    value_of_max_less_5 = value_of_max - 5
+
+  #  # Find the nearest value for max-5dB and its index
+    value_of_max_less_5 = find_nearest_value(sliced_array, value_of_max_less_5)
+    index_of_max_less_5 = np.where(data_in_db == value_of_max_less_5)[0][0]
+#
+  #  # Find the nearest value for max-25dB and its index
+    value_of_max_less_25 = value_of_max - 25
+    value_of_max_less_25 = find_nearest_value(sliced_array, value_of_max_less_25)
+    index_of_max_less_25 = np.where(data_in_db == value_of_max_less_25)[0][0]
+
+    # Calculate RT60 time
+    rt20 = t[index_of_max_less_5] - t[index_of_max_less_25]
+    rt60 = 3 * rt20
+
+
     rt60_subplot.set_title(f'{freq_name} RT60 Plot')
     rt60_subplot.set_xlabel("Time [s]")
     rt60_subplot.set_ylabel("Amplitude")
-    rt60_subplot.legend()
+    # rt60_subplot.legend()
     rt60_canvas.draw()
 
 def plot_all_rt60(data, sample_rate):
@@ -308,12 +390,13 @@ def plot_all_rt60(data, sample_rate):
         # Print RT60 value
         print(f'The RT60 reverb time at freq {int(target_frequency)}Hz is {round(abs(rt60), 2)} seconds')
 
-    all_rt60_subplot.set_title("RT60 Graph")
+    all_rt60_subplot.set_title("RT60 Combo Graph")
     all_rt60_subplot.set_xlabel("Time (s)")
     all_rt60_subplot.set_ylabel("Power (dB)")
     all_rt60_subplot.legend()
 
     all_rt60_canvas.draw()
+
 
 
 _root = tk.Tk()
@@ -331,7 +414,7 @@ center_2 = tk.Frame(_root)
 center_2.grid(row=2, column=1, padx=10, pady=10)
 
 bottom = tk.Frame(_root)
-bottom.grid(row=3, column=1, padx=10, pady=10)
+bottom.grid(row=4, column=1, padx=10, pady=10)
 
 import_btn = ttk.Button(buttons, text="Import Audio File", command=choose_file)
 import_btn.pack()
@@ -348,6 +431,9 @@ res_display.pack()
 diff_display = tk.Label(bottom, text ="", fg="black")
 diff_display.pack()
 
+decibel_display = tk.Label(bottom, text ="", fg="black")
+decibel_display.pack()
+
 freq_var = tk.StringVar(center_1, value='Display Frequency')
 freq_label = tk.Label(center_1, text='Frequency Choice')
 freq_choices = ("Low", "Mid", "High")
@@ -357,7 +443,7 @@ freq_choice_input.bind("<<ComboboxSelected>>", process_band)
 
 wave_frame = tk.Frame(center_1)
 wave_frame.grid(row=2, column=1, padx=10, pady=20)
-wave_figure = plt.figure(figsize=(4,3))
+wave_figure = plt.figure(figsize=(4,4))
 wave_subplot = wave_figure.add_subplot(111)
 wave_canvas = FigureCanvasTkAgg(wave_figure, wave_frame)
 wave_canvas.get_tk_widget().pack()
@@ -367,7 +453,7 @@ wave_toolbar.pack(anchor="w", fill=tk.X)
 
 spec_frame = tk.Frame(center_1)
 spec_frame.grid(row=2, column=3, padx=10, pady=20)
-spec_figure = plt.figure(figsize=(4,3))
+spec_figure = plt.figure(figsize=(4,4))
 spec_subplot = spec_figure.add_subplot(111)
 spec_canvas = FigureCanvasTkAgg(spec_figure, spec_frame)
 spec_canvas.get_tk_widget().pack()
@@ -377,7 +463,7 @@ spec_toolbar.pack(anchor="w", fill=tk.X)
 
 all_rt60_frame = tk.Frame(center_2)
 all_rt60_frame.grid(row=2, column=2, padx=10, pady=20)
-all_rt60_figure = plt.figure(figsize=(4,3))
+all_rt60_figure = plt.figure(figsize=(4,4))
 all_rt60_subplot = all_rt60_figure.add_subplot(111)
 all_rt60_canvas = FigureCanvasTkAgg(all_rt60_figure,all_rt60_frame)
 all_rt60_canvas.get_tk_widget().pack()
@@ -387,7 +473,7 @@ all_rt60_toolbar.pack(anchor="w", fill=tk.X)
 
 rt60_frame = tk.Frame(center_1)
 rt60_frame.grid(row=2, column=4, padx=10, pady=20)
-rt60_figure = plt.figure(figsize=(4,3))
+rt60_figure = plt.figure(figsize=(4,4))
 rt60_subplot = rt60_figure.add_subplot(111)
 rt60_canvas = FigureCanvasTkAgg(rt60_figure, rt60_frame)
 rt60_canvas.get_tk_widget().pack()
