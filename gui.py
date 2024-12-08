@@ -4,8 +4,56 @@ from tkinter import *
 from tkinter import ttk
 import tkinter as tk
 # using Figure to place the plot in the GUI
-import PlotClass
+from tkinter.filedialog import askopenfilename
+from pydub import AudioSegment
+from pathlib import Path
+from PlotClass import BaseAudio
 
+chosen_file_path = None
+working_audio = None
+
+# tk.Tk().withdraw() # part of the import if you are not using other tkinter functions
+# allows the user to select either a WAV or MP3 file and returns a .wav file
+def findFile():
+    global chosen_file_path, working_audio
+    # opens File Explorer and allows the user to find and select either a WAV or MP3 file, then stores it in "fn"
+    fn = askopenfilename(filetypes=[("WAV Files", "*.wav"), ('MP3 Files', '*.mp3')])
+    # in case you don't select a file
+    if not fn:
+        print("No file selection")
+        return
+
+    extension = Path(fn).suffix  # holds the extension of the selected file
+    filePath = fn  # stores a copy of the selected file's path
+
+    # checks to see if the file is an MP3
+    if extension == ".mp3":
+        # makes a dummy WAV file to store the converted audio
+        dst = Path("Converted Sound File.wav")
+        # converts the selected MP3 file into WAV format
+        sound = AudioSegment.from_mp3(fn)
+        sound.export(dst, format="wav")
+        filePath = str(dst)
+
+    # checkpoint - does the file even exist... ? T-T
+    if not Path(filePath).is_file():
+        print(f"{filePath} not found")
+        return
+
+    chosen_file_path = filePath
+    working_audio = BaseAudio(chosen_file_path, _plot_frame)
+    print(f"Loaded {filePath}")
+
+    # sw = 0
+    # with wave.open(filePath, "rb") as waveFile:
+    #     sw = waveFile.getsampwidth()
+    #     waveFile.close()
+
+    # with wave.open(filePath, "w") as waveFile:
+    #     waveFile.setnchannels(1)
+    #     #waveFile.setsampwidth(16)
+    #     waveFile.close()
+    # returns a WAV file
 
 # just a placeholder for plot_as_chosen ....
 def plot_spec():
@@ -34,19 +82,19 @@ if __name__ == "__main__":
     plot_choice_input = ttk.Combobox(_button_frame, values=plot_choices, textvariable=plot_var, state='readonly')
     plot_choice_input.grid(row=2, column=1, sticky=E)
 
-    # button to load + plot audio
-    # currently hooked up with the plot function (just plotting the audio file bc it is currently hard coded to open a specific file)
-    _load_btn = ttk.Button(_button_frame, text="Load Audio File", command=PlotClass.findFile)
+    # button to load an audio file
+    _load_btn = ttk.Button(_button_frame, text="Load Audio File", command=findFile)
     _load_btn.grid(row=1, column=1, sticky=W)
+
 
     # depending on the plot chosen in the combobox, plot_as_chosen will plot the specific plot
     # currently, it is set up that we have one window that displays plots, and the window will change its display depending on the combobox choice
-    # maybe choose to have all the plots at once? the display selector seems cool, though...
-    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=PlotClass.PlotWave.plot_as_chosen)
+    # lambda so that the button's function doesn't run immediately
+    load_btn_2 = ttk.Button(_button_frame, text="Display Plot", command=lambda : working_audio.plot_as_chosen(plot_choice_input.get()) if working_audio else None)
     load_btn_2.grid(row=2, column=2, sticky=W)
 
-    # button to combine rt60 plots, not implemented at all! just placeholder
-    rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies", command=PlotClass.PlotRT60.plot_all_rt60)
+    # button to combine rt60 plots
+    rt60_combo_btn = ttk.Button(_button_frame, text="Combine RT60 Frequencies", command=working_audio.plot_all_rt60 if working_audio else None)
     rt60_combo_btn.grid(row=1, column=2, sticky=W)
 
     _root.mainloop()
