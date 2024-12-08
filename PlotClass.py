@@ -28,21 +28,35 @@ def find_nearest_value(array, value):
 
 class BaseAudio():
     def __init__(self, fpath, master_frame):
+
         self.file_name = os.path.basename(fpath)
         self.file_path = fpath
-        # Load the audio file
+        self.channel_num = self.find_channel_num()
         self.sample_rate, self.data = wavfile.read(self.file_path)
         self.master_frame = master_frame
         self.length = self.data.shape[0] / self.sample_rate
-        self.frequencies, self.power = welch(self.data, self.sample_rate, nperseg=4096)
-        self.dominant_frequency = self.frequencies[np.argmax(self.power)]
+
+        if self.channel_num == 1:
+            self.frequencies, self.power = welch(self.data, self.sample_rate, nperseg=4096)
+            self.dominant_frequency = self.frequencies[np.argmax(self.power)]
+            self.res_freq = self.dominant_frequency
+        elif self.channel_num > 1:
+            self.frequencies, self.power = welch(self.data[:,0], self.sample_rate, nperseg=4096)
+            self.dominant_frequency = self.frequencies[np.argmax(self.power)]
+            self.res_freq = self.dominant_frequency
+
         print(f'Dominant Frequency is {round(self.dominant_frequency)}Hz')
-        self.res_freq = self.dominant_frequency
         self.rt60_diff = self.length - 0.5
         print("hello!!! init BaseAudio")
 
+    def find_channel_num(self):
+        if len(self.data.shape) == 1:
+            return 1
+        else:
+            return self.data.shape[1]
+
     def plot_wave(self):
-            print(f"number of channels = {self.data.shape[len(self.data.shape) - 1]}")
+            print(f"number of channels = {self.channel_num}")
             print(f'this is data shape {self.data.shape}')
             print(f"sample rate = {self.sample_rate}Hz")
             print(f"length = {self.length}s")
@@ -53,14 +67,15 @@ class BaseAudio():
             fig = Figure(figsize=(7, 5), dpi=100)
             plt = fig.add_subplot(111)
 
-            if len(self.data.shape) == 1:
+            if self.channel_num == 1:
                 plt.plot(time, self.data, label="Mono channel")
                 plt.set_title("Mono-Channel Audio File Plotted")
 
-            if len(self.data.shape) == 2:
-                plt.plot(time, self.data[:, 0], label="Left channel")
-                plt.plot(time, self.data[:, 1], label="Right channel")
-                plt.set_title("Two-Channel Audio File Plotted")
+            if self.channel_num > 1:
+                for x in range(self.channel_num):
+                    label_title = f'Channel {x + 1}'
+                    plt.plot(time, self.data[:, x], label=label_title)
+                    plt.set_title("Two-Channel Audio File Plotted")
 
             plt.set_xlabel("Time [s]")
             plt.set_ylabel("Amplitude")
