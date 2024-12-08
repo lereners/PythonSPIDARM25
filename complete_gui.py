@@ -14,22 +14,8 @@ import os
 chosen_file = None
 colors = ["red", "orange", "green", "blue"]
 
-# implement soon
 
-def find_decibels(self):
-    if self.channel_num == 1:
-        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2))
-    else:
-        rms = np.sqrt(np.mean(self.data / 32768.0 ** 2, axis=0))  # Average across channels
-
-    # Convert RMS to decibels
-    decibels = 20 * np.log10(rms)
-    print("The audio file is: " + decibels + "dBFS")
-
-
-
-
-
+# displaying all plots
 def audio_display(file_path):
     wave_subplot.clear()
     rt60_subplot.clear()
@@ -95,6 +81,7 @@ def audio_display(file_path):
     wave_subplot.legend()
     wave_canvas.draw()
 
+# choosing/importing a file
 def choose_file():
     global chosen_file
     file_path = askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3")])
@@ -118,6 +105,7 @@ def choose_file():
     file_name.config(text=f"File name: {os.path.basename(chosen_file)}")
     audio_display(file_path)
 
+# plotting spectrogram (addition plot of choice)
 def plot_spec():
     spec_subplot.clear()
 
@@ -143,6 +131,7 @@ def goal_freq(freq):
             break
         return x
 
+# calculating rt60 and plotting
 def calc_rt60(spectrum, freq, t, color, label_value):
     rt60_subplot.clear()
 
@@ -196,10 +185,12 @@ def calc_rt60(spectrum, freq, t, color, label_value):
     rt60 = 3 * rt20
     print(f'The RT60 reverb time at freq {int(data_in_db[index_of_max])}Hz is {round(abs(rt60), 2)} seconds')
 
+# provided code
 def find_target_frequency(freqs, target):
     nearest_freq = freqs[np.abs(freqs - target).argmin()]
     return nearest_freq
 
+# provided code
 def bandpass_filter(data, lowcut, highcut, fs, order=4):
     if len(data) < 27:
         data = resample(data, 27)
@@ -217,6 +208,7 @@ def find_nearest_value(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
+# defining the frequency ranges
 def freq_range(freq_choice):
     if freq_choice == "Low":
         return [20, 250]
@@ -227,6 +219,7 @@ def freq_range(freq_choice):
     else:
         return [250, 2000]
 
+# dealing with frequency choices (from combobox)
 def process_band(event):
     choice = freq_choice_input.get()
     sample_rate, data = wavfile.read(chosen_file)
@@ -234,23 +227,19 @@ def process_band(event):
     filtered_data = bandpass_filter(data, range[0], range[1], sample_rate)
     plot_filtered(filtered_data, sample_rate, choice, range[1])
 
+# plotting low, mid, high
 def plot_filtered(filtered_data, sample_rate, freq_name, target):
     rt60_subplot.clear()
-
     if len(filtered_data.shape) == 1:
         channel_num = 1
     else:
         channel_num = filtered_data.shape[1]
-
     t = np.linspace(0, len(filtered_data) / sample_rate, len(filtered_data), endpoint=False)
 
+    # dealing with multiple channels
     if channel_num > 1:
         for i in range(channel_num):
             channel_data = filtered_data[:,i]
-        # rt60_subplot.plot(t, combined_data, color=colors[0])
-    # else:
-       #  rt60_subplot.plot(t, filtered_data, color=colors[0])
-
         fft_result = np.fft.fft(channel_data)
         spectrum = np.abs(fft_result)  # Get magnitude spectrum
         freqs = np.fft.fftfreq(len(channel_data), d=1 / sample_rate)
@@ -300,15 +289,14 @@ def plot_filtered(filtered_data, sample_rate, freq_name, target):
     index_of_max = np.argmax(data_in_db)
     value_of_max = data_in_db[index_of_max]
 
-  #  # Slice the array from the maximum value
+    # Slice the array from the maximum value
     sliced_array = data_in_db[index_of_max:]
     value_of_max_less_5 = value_of_max - 5
 
-  #  # Find the nearest value for max-5dB and its index
+    # Find the nearest value for max-5dB and its index
     value_of_max_less_5 = find_nearest_value(sliced_array, value_of_max_less_5)
     index_of_max_less_5 = np.where(data_in_db == value_of_max_less_5)[0][0]
-#
-  #  # Find the nearest value for max-25dB and its index
+    # Find the nearest value for max-25dB and its index
     value_of_max_less_25 = value_of_max - 25
     value_of_max_less_25 = find_nearest_value(sliced_array, value_of_max_less_25)
     index_of_max_less_25 = np.where(data_in_db == value_of_max_less_25)[0][0]
@@ -321,9 +309,9 @@ def plot_filtered(filtered_data, sample_rate, freq_name, target):
     rt60_subplot.set_title(f'{freq_name} RT60 Plot')
     rt60_subplot.set_xlabel("Time [s]")
     rt60_subplot.set_ylabel("Amplitude")
-    # rt60_subplot.legend()
     rt60_canvas.draw()
 
+# Plotting every RT60 value using provided code (slightly modified variables)
 def plot_all_rt60(data, sample_rate):
     all_rt60_subplot.clear()
 
@@ -385,24 +373,23 @@ def plot_all_rt60(data, sample_rate):
     all_rt60_canvas.draw()
 
 
-
+# GUI layout using Tkinter
 _root = tk.Tk()
 _root.title ("Scientific Python Interactive Data Acoustic Modeling")
 _root.resizable(True, True)
 _root.geometry('1280x720')
 
+# frames
 buttons = tk.Frame(_root)
 buttons.grid(row=0, column=1, padx=10, pady=10)
 
 center_1 = tk.Frame(_root)
 center_1.grid(row=1, column=1, padx=10, pady=10)
 
-center_2 = tk.Frame(_root)
-center_2.grid(row=2, column=1, padx=10, pady=10)
-
 bottom = tk.Frame(_root)
 bottom.grid(row=3, column=1, padx=10, pady=10)
 
+# buttons and info display
 import_btn = ttk.Button(buttons, text="Import Audio File", command=choose_file)
 import_btn.pack()
 
@@ -418,6 +405,7 @@ res_display.pack()
 diff_display = tk.Label(bottom, text ="", fg="black")
 diff_display.pack()
 
+# Command associated with making a combobox selection
 freq_var = tk.StringVar(center_1, value='Display Frequency')
 freq_label = tk.Label(center_1, text='Frequency Choice')
 freq_choices = ("Low", "Mid", "High")
@@ -425,8 +413,9 @@ freq_choice_input = ttk.Combobox(center_1, values=freq_choices, textvariable=fre
 freq_choice_input.grid(row=3, column=4)
 freq_choice_input.bind("<<ComboboxSelected>>", process_band)
 
+# Four windows, one per plot
 wave_frame = tk.Frame(center_1)
-wave_frame.grid(row=2, column=1, padx=10, pady=20)
+wave_frame.grid(row=2, column=1, padx=5, pady=20)
 wave_figure = plt.figure(figsize=(4,4))
 wave_subplot = wave_figure.add_subplot(111)
 wave_canvas = FigureCanvasTkAgg(wave_figure, wave_frame)
@@ -435,18 +424,8 @@ wave_toolbar = NavigationToolbar2Tk(wave_canvas, wave_frame, pack_toolbar=False)
 wave_toolbar.update()
 wave_toolbar.pack(anchor="w", fill=tk.X)
 
-spec_frame = tk.Frame(center_1)
-spec_frame.grid(row=2, column=3, padx=10, pady=20)
-spec_figure = plt.figure(figsize=(4,4))
-spec_subplot = spec_figure.add_subplot(111)
-spec_canvas = FigureCanvasTkAgg(spec_figure, spec_frame)
-spec_canvas.get_tk_widget().pack()
-spec_toolbar = NavigationToolbar2Tk(spec_canvas, spec_frame, pack_toolbar=False)
-spec_toolbar.update()
-spec_toolbar.pack(anchor="w", fill=tk.X)
-
-all_rt60_frame = tk.Frame(center_2)
-all_rt60_frame.grid(row=2, column=2, padx=10, pady=20)
+all_rt60_frame = tk.Frame(center_1)
+all_rt60_frame.grid(row=2, column=2, padx=5, pady=20)
 all_rt60_figure = plt.figure(figsize=(4,4))
 all_rt60_subplot = all_rt60_figure.add_subplot(111)
 all_rt60_canvas = FigureCanvasTkAgg(all_rt60_figure,all_rt60_frame)
@@ -455,8 +434,18 @@ all_rt60_toolbar = NavigationToolbar2Tk(all_rt60_canvas, all_rt60_frame, pack_to
 all_rt60_toolbar.update()
 all_rt60_toolbar.pack(anchor="w", fill=tk.X)
 
+spec_frame = tk.Frame(center_1)
+spec_frame.grid(row=2, column=3, padx=5, pady=20)
+spec_figure = plt.figure(figsize=(4,4))
+spec_subplot = spec_figure.add_subplot(111)
+spec_canvas = FigureCanvasTkAgg(spec_figure, spec_frame)
+spec_canvas.get_tk_widget().pack()
+spec_toolbar = NavigationToolbar2Tk(spec_canvas, spec_frame, pack_toolbar=False)
+spec_toolbar.update()
+spec_toolbar.pack(anchor="w", fill=tk.X)
+
 rt60_frame = tk.Frame(center_1)
-rt60_frame.grid(row=2, column=4, padx=10, pady=20)
+rt60_frame.grid(row=2, column=4, padx=5, pady=20)
 rt60_figure = plt.figure(figsize=(4,4))
 rt60_subplot = rt60_figure.add_subplot(111)
 rt60_canvas = FigureCanvasTkAgg(rt60_figure, rt60_frame)
@@ -465,6 +454,4 @@ rt60_toolbar = NavigationToolbar2Tk(rt60_canvas, rt60_frame, pack_toolbar=False)
 rt60_toolbar.update()
 rt60_toolbar.pack(anchor="w", fill=tk.X)
 
-
 _root.mainloop()
-
