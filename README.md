@@ -1,4 +1,4 @@
-# SPIDARM
+# SPIDAM
 
 Simple overview of use/purpose.
 
