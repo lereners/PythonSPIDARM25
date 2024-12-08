@@ -12,10 +12,8 @@ import matplotlib.pyplot as plt
 
 chosen_file = None
 
-
-# displaying the e
 def audio_display(file_path):
-    global wave_canvas, wave_subplot
+    wave_subplot.clear()
 
     if not chosen_file:
         return
@@ -41,8 +39,11 @@ def audio_display(file_path):
         wave_subplot.plot(t, data, label="Mono channel")
         wave_subplot.set_title("Mono-Channel Audio File Plotted")
 
+        plot_all_rt60(data, sample_rate)
+
         spectrum, freq, t, im = spec_subplot.specgram(data, Fs=sample_rate, NFFT=1024, cmap=plt.get_cmap("autumn_r"))
         calc_rt60(spectrum, freq, t, "r", label_value=1)
+
 
     if channel_num > 1:
         frequencies, power = welch(data[:,0], sample_rate, nperseg=4096)
@@ -52,8 +53,11 @@ def audio_display(file_path):
 
         for x in range(channel_num):
             label_title = f'Channel {x + 1}'
-            wave_subplot.plot(t, data[:, x], label=label_title)
-            wave_subplot.set_title("Two-Channel Audio File Plotted")
+            wave_subplot.plot(t, data[:, 0], label="Left channel")
+            wave_subplot.plot(t, data[:, 1], label="Right channel")
+            wave_subplot.set_title(f"{x + 1}-Channel Audio File Plotted")
+
+            plot_all_rt60(data[:,0], sample_rate)
 
             spectrum, freq, t, im = spec_subplot.specgram(data[:,0], Fs=sample_rate, NFFT=1024, cmap=plt.get_cmap("autumn_r"))
             spec_subplot.set_title("Spectrogram")
@@ -63,6 +67,7 @@ def audio_display(file_path):
     wave_subplot.set_xlabel("Time [s]")
     wave_subplot.set_ylabel("Amplitude")
     wave_subplot.legend()
+
     wave_canvas.draw()
 
 def choose_file():
@@ -85,10 +90,11 @@ def choose_file():
         print("Filetype not supported.")
 
     chosen_file = file_path
+    file_name.config(text=f"File name: {chosen_file}")
     audio_display(file_path)
 
 def plot_spec():
-    global spec_canvas, spec_subplot
+    spec_subplot.clear()
 
     if not chosen_file:
         return
@@ -104,6 +110,7 @@ def plot_spec():
     spec_subplot.set_title("Spectrogram")
     spec_subplot.set_xlabel("Time [s]")
     spec_subplot.set_ylabel("Frequency [Hz]")
+
     spec_canvas.draw()
 
 def goal_freq(freq):
@@ -132,6 +139,8 @@ def calc_rt60(spectrum, freq, t, color, label_value):
     rt60_subplot.set_xlabel("Time (s)")
     rt60_subplot.set_ylabel("Power (dB)")
     rt60_subplot.legend()
+
+    rt60_canvas.draw()
 
     # find an index of a max value
     index_of_max = np.argmax(data_in_db)
@@ -181,6 +190,8 @@ def find_nearest_value(array, value):
     return array[idx]
 
 def plot_all_rt60(data, sample_rate):
+    all_rt60_subplot.clear()
+
     targets = [250, 2000, 8000]
 
     t = np.linspace(0, len(data) / sample_rate, len(data), endpoint=False)
@@ -205,7 +216,7 @@ def plot_all_rt60(data, sample_rate):
         data_in_db = 10 * np.log10(np.abs(filtered_data) + 1e-10)  # Avoid log of zero
 
         # Plot the filtered signal in decibel scale
-        plt.plot(t, data_in_db, label=f"{target} Hz", linewidth=1, alpha=0.7)
+        all_rt60_subplot.plot(t, data_in_db, label=f"{target} Hz", linewidth=1, alpha=0.7)
 
         # Find the index of the maximum value
         index_of_max = np.argmax(data_in_db)
@@ -231,6 +242,13 @@ def plot_all_rt60(data, sample_rate):
         # Print RT60 value
         print(f'The RT60 reverb time at freq {int(target_frequency)}Hz is {round(abs(rt60), 2)} seconds')
 
+    all_rt60_subplot.set_title("RT60 Graph")
+    all_rt60_subplot.set_xlabel("Time (s)")
+    all_rt60_subplot.set_ylabel("Power (dB)")
+    all_rt60_subplot.legend()
+
+    all_rt60_canvas.draw()
+
 
 _root = tk.Tk()
 _root.title ("Scientific Python Interactive Data Acoustic Modeling")
@@ -244,7 +262,7 @@ center_1 = tk.Frame(_root)
 center_1.grid(row=1, column=1, padx=10, pady=10)
 
 center_2 = tk.Frame(_root)
-center_2.grid(row=1, column=1, padx=10, pady=10)
+center_2.grid(row=2, column=1, padx=10, pady=10)
 
 bottom = tk.Frame(_root)
 bottom.grid(row=3, column=1, padx=10, pady=10)
@@ -264,7 +282,7 @@ res_display.pack()
 
 wave_frame = tk.Frame(center_1)
 wave_frame.grid(row=2, column=1, padx=10, pady=20)
-wave_figure = plt.figure(figsize=(3,4))
+wave_figure = plt.figure(figsize=(4,4))
 wave_subplot = wave_figure.add_subplot(111)
 wave_canvas = FigureCanvasTkAgg(wave_figure, wave_frame)
 wave_canvas.get_tk_widget().pack()
@@ -274,7 +292,7 @@ wave_toolbar.pack(anchor="w", fill=tk.X)
 
 rt60_frame = tk.Frame(center_1)
 rt60_frame.grid(row=2, column=2, padx=10, pady=20)
-rt60_figure = plt.figure(figsize=(3, 4))
+rt60_figure = plt.figure(figsize=(4,4))
 rt60_subplot = rt60_figure.add_subplot(111)
 rt60_canvas = FigureCanvasTkAgg(rt60_figure, rt60_frame)
 rt60_canvas.get_tk_widget().pack()
@@ -284,12 +302,23 @@ rt60_toolbar.pack(anchor="w", fill=tk.X)
 
 spec_frame = tk.Frame(center_1)
 spec_frame.grid(row=2, column=3, padx=10, pady=20)
-spec_figure = plt.figure(figsize=(3,4))
+spec_figure = plt.figure(figsize=(4,4))
 spec_subplot = spec_figure.add_subplot(111)
 spec_canvas = FigureCanvasTkAgg(spec_figure, spec_frame)
 spec_canvas.get_tk_widget().pack()
 spec_toolbar = NavigationToolbar2Tk(spec_canvas, spec_frame, pack_toolbar=False)
 spec_toolbar.update()
 spec_toolbar.pack(anchor="w", fill=tk.X)
+
+all_rt60_frame = tk.Frame(center_2)
+all_rt60_frame.grid(row=5, column=1, padx=10, pady=20)
+all_rt60_figure = plt.figure(figsize=(4,4))
+all_rt60_subplot = all_rt60_figure.add_subplot(111)
+all_rt60_canvas = FigureCanvasTkAgg(all_rt60_figure,all_rt60_frame)
+all_rt60_canvas.get_tk_widget().pack()
+all_rt60_toolbar = NavigationToolbar2Tk(all_rt60_canvas, all_rt60_frame, pack_toolbar=False)
+all_rt60_toolbar.update()
+all_rt60_toolbar.pack(anchor="w", fill=tk.X)
+
 _root.mainloop()
 
