@@ -37,7 +37,7 @@ def audio_display(file_path):
         else:
             return data.shape[1]
 
-def find_decibels():
+    def find_decibels():
         if find_channel_num() == 1:
             rms = np.sqrt(np.mean(data / 32768.0 ** 2))
         else:
